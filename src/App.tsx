@@ -1,11 +1,12 @@
-import { type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { useQuotes } from "./hooks/useQuotes";
 import { fmt, pct } from "./lib/utils";
-import { TabBar } from "./components/TabBar";
+import { Sidebar, SIDEBAR_PCT } from "./components/Sidebar";
 import { StatCard } from "./components/StatCard";
 import { OverviewView } from "./components/OverviewView";
 import { PrintView } from "./components/PrintView";
 import { CostBreakdown } from "./components/CostBreakdown";
+import { QuoteCharts } from "./components/QuoteCharts";
 
 const thStyle: CSSProperties = {
   textAlign: "right",
@@ -18,11 +19,12 @@ const thStyle: CSSProperties = {
 };
 
 export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
-    activeQuote, calculated, totals, bulkData,
-    setClientName, setGlobalMargin, applyGlobalMargin,
+    activeQuote, calculated, totals, bulkData, gm,
+    setClientName, setGlobalMargin,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
@@ -31,19 +33,27 @@ export default function App() {
 
   if (!activeQuote) return null;
 
+  const sideW = sidebarOpen ? `calc(${SIDEBAR_PCT} + 20px)` : "20px";
+
   return (
     <div style={{ fontFamily: "'Inter',system-ui,sans-serif", background: "#f8fafc", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px" }}>
+      <Sidebar
+        quotes={quotes} activeId={activeId} view={view}
+        sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+        onSwitch={switchQuote} onAdd={addQuote} onDelete={deleteQuote}
+        onDuplicate={duplicateQuote} onOverview={() => setView("overview")}
+      />
 
+      <div style={{ marginLeft: sideW, transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)", padding: "24px 20px" }}>
         {/* Header */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 8 }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#3b82f6,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14 }}>U</div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: 0 }}>ULAB Báo Giá</h1>
-              <span style={{ fontSize: 11, color: "#94a3b8", background: "#f1f5f9", padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>Multi-client</span>
-            </div>
-            <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>Quản lý báo giá merchandise cho nhiều khách hàng</p>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", margin: 0 }}>
+              {view === "overview" ? "📊 Tổng quan" : activeQuote.clientName || "Báo giá"}
+            </h1>
+            <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+              {view === "overview" ? "So sánh tất cả khách hàng" : `${activeQuote.items.length} sản phẩm · Tạo: ${new Date(activeQuote.createdAt).toLocaleDateString("vi-VN")}`}
+            </p>
           </div>
           {view === "detail" && (
             <div style={{ display: "flex", gap: 6 }}>
@@ -57,12 +67,6 @@ export default function App() {
           )}
         </div>
 
-        <TabBar
-          quotes={quotes} activeId={activeId} view={view}
-          onSwitch={switchQuote} onAdd={addQuote} onDelete={deleteQuote}
-          onDuplicate={duplicateQuote} onOverview={() => setView("overview")}
-        />
-
         {view === "overview" ? (
           <OverviewView quotes={quotes} onSwitch={switchQuote} />
         ) : (
@@ -73,19 +77,21 @@ export default function App() {
               <input
                 value={activeQuote.clientName}
                 onChange={e => setClientName(e.target.value)}
-                style={{ flex: 1, minWidth: 200, border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 10px", fontSize: 14, fontWeight: 700, color: "#1e293b", outline: "none" }}
+                style={{ flex: 1, minWidth: 180, border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 10px", fontSize: 14, fontWeight: 700, color: "#1e293b", outline: "none" }}
                 placeholder="Tên khách hàng..."
               />
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>Tạo: {new Date(activeQuote.createdAt).toLocaleDateString("vi-VN")}</span>
             </div>
 
             {/* Stat cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 16 }}>
-              <StatCard label="Tổng chi phí" value={fmt(totals.totalCost)} color="orange" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 16 }}>
               <StatCard label="Tổng doanh thu" value={fmt(totals.totalRev)} color="blue" />
+              <StatCard label="Tổng chi phí" value={fmt(totals.totalCost)} color="orange" />
               <StatCard label="Lợi nhuận gộp" value={fmt(totals.profit)} color="green" />
-              <StatCard label="Biên LN trung bình" value={pct(totals.margin)} sub={`Mục tiêu: ${activeQuote.globalMargin}%`} color="purple" />
+              <StatCard label="Biên LN trung bình" value={pct(totals.margin)} sub={`Target: ${activeQuote.globalMargin}%`} color="purple" />
             </div>
+
+            {/* Charts */}
+            <QuoteCharts calculated={calculated} />
 
             {/* Sub-tab switcher */}
             <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 12, padding: 4, width: "fit-content", marginBottom: 16 }}>
@@ -98,11 +104,10 @@ export default function App() {
             {subTab === "quote" && (
               <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", overflow: "hidden" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Target Margin:</span>
+                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Target Margin (giá ĐX):</span>
                   {[25, 30, 35, 40, 45, 50].map(m => (
                     <button key={m} onClick={() => setGlobalMargin(m)} style={{ padding: "4px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: activeQuote.globalMargin === m ? "none" : "1px solid #e2e8f0", background: activeQuote.globalMargin === m ? "#3b82f6" : "#fff", color: activeQuote.globalMargin === m ? "#fff" : "#64748b", cursor: "pointer" }}>{m}%</button>
                   ))}
-                  <button onClick={applyGlobalMargin} style={{ marginLeft: 4, padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, border: "none", background: "#eff6ff", color: "#3b82f6", cursor: "pointer" }}>Áp dụng tất cả</button>
                 </div>
 
                 <div style={{ overflowX: "auto" }}>
@@ -115,19 +120,19 @@ export default function App() {
                         <th style={{ ...thStyle, width: 60 }}>SL</th>
                         <th style={{ ...thStyle, width: 90 }}>Giá vốn</th>
                         <th style={thStyle}>Tổng vốn</th>
-                        <th style={thStyle}>Giá ĐX</th>
+                        <th style={thStyle}>Giá ĐX ({activeQuote.globalMargin}%)</th>
                         <th style={{ ...thStyle, width: 100 }}>Giá bán ✏️</th>
                         <th style={thStyle}>Doanh thu</th>
                         <th style={thStyle}>Lợi nhuận</th>
-                        <th style={{ ...thStyle, textAlign: "center", width: 65 }}>Margin TT</th>
+                        <th style={{ ...thStyle, textAlign: "center", width: 65 }}>Margin</th>
                         <th style={{ ...thStyle, width: 28 }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {calculated.map((row, i) => {
                         const isExp = expandedRows[row.id];
-                        const marginWarning = row.actualMargin < row.margin * 0.9;
-                        const marginGood = row.actualMargin >= row.margin;
+                        const marginOk = row.actualMargin >= gm;
+                        const marginLow = row.actualMargin < gm * 0.8;
                         return [
                           <tr key={row.id} style={{ borderBottom: isExp ? "none" : "1px solid #f8fafc" }}
                             onMouseEnter={e => e.currentTarget.style.background = "#fafbff"}
@@ -159,7 +164,7 @@ export default function App() {
                             <td style={{ padding: "10px 8px", textAlign: "right", color: "#334155" }}>{fmt(row.totalRev)}</td>
                             <td style={{ padding: "10px 8px", textAlign: "right", fontWeight: 600, color: row.profit >= 0 ? "#059669" : "#ef4444" }}>{fmt(row.profit)}</td>
                             <td style={{ padding: "10px 8px", textAlign: "center" }}>
-                              <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: marginWarning ? "#fef2f2" : marginGood ? "#ecfdf5" : "#fffbeb", color: marginWarning ? "#dc2626" : marginGood ? "#059669" : "#d97706" }}>{pct(row.actualMargin)}</span>
+                              <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: marginLow ? "#fef2f2" : marginOk ? "#ecfdf5" : "#fffbeb", color: marginLow ? "#dc2626" : marginOk ? "#059669" : "#d97706" }}>{pct(row.actualMargin)}</span>
                             </td>
                             <td style={{ padding: "10px 8px", textAlign: "center" }}>
                               <button onClick={() => removeItem(row.id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16, opacity: 0.4, lineHeight: 1 }}
@@ -200,7 +205,7 @@ export default function App() {
                   <select value={bulkItem} onChange={e => setBulkItem(+e.target.value)} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 10px", fontSize: 13, outline: "none" }}>
                     {activeQuote.items.map((it, i) => <option key={it.id} value={i}>{it.name || `SP ${i + 1}`}</option>)}
                   </select>
-                  {calculated[bulkItem] && <span style={{ fontSize: 11, color: "#94a3b8" }}>Giữ nguyên margin {pct(calculated[bulkItem].margin)}</span>}
+                  {calculated[bulkItem] && <span style={{ fontSize: 11, color: "#94a3b8" }}>Target margin {activeQuote.globalMargin}%</span>}
                 </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
@@ -236,7 +241,7 @@ export default function App() {
             )}
 
             <div style={{ marginTop: 14, padding: "10px 16px", background: "#fff", borderRadius: 12, border: "1px solid #f1f5f9", fontSize: 11, color: "#94a3b8" }}>
-              <span style={{ fontWeight: 600, color: "#64748b" }}>Công thức:</span> Giá ĐX = Giá vốn ÷ (1 − Margin) → Làm tròn lên 100đ · <span style={{ color: "#3b82f6" }}>Giá bán ✏️</span> = tuỳ chỉnh tay, <span style={{ color: "#f59e0b" }}>viền vàng</span> = đã override · 💾 Dữ liệu tự động lưu
+              <span style={{ fontWeight: 600, color: "#64748b" }}>Công thức:</span> Giá ĐX = Giá vốn ÷ (1 − Target Margin) → Làm tròn lên 100đ · <span style={{ color: "#3b82f6" }}>Giá bán ✏️</span> = tuỳ chỉnh tay, <span style={{ color: "#f59e0b" }}>viền vàng</span> = đã override · 💾 Dữ liệu tự động lưu
             </div>
           </>
         )}
