@@ -85,9 +85,6 @@ export default function App() {
               <button onClick={() => handleExport("download")} title="Tải file HTML (mở trong browser để in ra PDF)" style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", color: "#475569", border: "1px solid #e2e8f0", borderRadius: 10, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 💾 Tải HTML
               </button>
-              <button onClick={handleShare} disabled={shareLoading} style={{ display: "flex", alignItems: "center", gap: 6, background: shareCopied ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "#fff", color: shareCopied ? "#fff" : "#475569", border: "1px solid #e2e8f0", borderRadius: 10, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", opacity: shareLoading ? 0.7 : 1, transition: "all .2s" }}>
-                {shareLoading ? "⏳ Saving..." : shareCopied ? "✅ Link copied!" : "💾 Save"}
-              </button>
             </div>
           )}
         </div>

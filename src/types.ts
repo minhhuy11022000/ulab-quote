@@ -17,7 +17,6 @@ export type Quote = {
   nextId: number;
   createdAt: string;
   shareId?: string;
-};
 
 export type CalcRow = Item & {
   unitCost: number;
