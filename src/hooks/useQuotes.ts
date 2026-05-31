@@ -58,10 +58,6 @@ export function useQuotes() {
   const setGlobalMargin = useCallback((m: number) =>
     updateActiveQuote(q => ({ ...q, globalMargin: m })), [updateActiveQuote]);
 
-  const applyGlobalMargin = useCallback(() =>
-    updateActiveQuote(q => ({ ...q, items: q.items.map(it => ({ ...it, margin: q.globalMargin / 100 })) })),
-    [updateActiveQuote]);
-
   const updateItem = useCallback((itemId: number, field: keyof Item, val: Item[keyof Item]) => {
     updateActiveQuote(q => ({ ...q, items: q.items.map(it => it.id === itemId ? { ...it, [field]: val } : it) }));
   }, [updateActiveQuote]);
@@ -125,9 +121,11 @@ export function useQuotes() {
 
   const switchQuote = useCallback((id: string) => { setActiveId(id); setView("detail"); }, []);
 
+  const gm = activeQuote ? activeQuote.globalMargin / 100 : 0.35;
+
   const calculated = useMemo<CalcRow[]>(
-    () => activeQuote?.items.map(it => ({ ...it, ...calcRow(it) })) ?? [],
-    [activeQuote]
+    () => activeQuote?.items.map(it => ({ ...it, ...calcRow(it, gm) })) ?? [],
+    [activeQuote, gm]
   );
 
   const totals = useMemo<Totals>(
@@ -141,10 +139,10 @@ export function useQuotes() {
     return BULK_TIERS.map(tier => {
       const nQ = Math.round(base.qty * tier.factor);
       const nC = Math.round(base.unitCost * (1 - tier.costDelta));
-      const nP = Math.ceil(nC / (1 - base.margin) / 100) * 100;
+      const nP = Math.ceil(nC / (1 - gm) / 100) * 100;
       return { ...tier, nQ, nC, nP, nTC: nQ * nC, nTR: nQ * nP, nPr: nQ * nP - nQ * nC };
     });
-  }, [calculated, bulkItem]);
+  }, [calculated, bulkItem, gm]);
 
   const handleExport = useCallback((mode = "print") => {
     setShowPrint(true);
@@ -193,8 +191,8 @@ export function useQuotes() {
   return {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
-    activeQuote, calculated, totals, bulkData,
-    setClientName, setGlobalMargin, applyGlobalMargin,
+    activeQuote, calculated, totals, bulkData, gm,
+    setClientName, setGlobalMargin,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
