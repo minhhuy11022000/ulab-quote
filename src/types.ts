@@ -16,6 +16,7 @@ export type Quote = {
   globalMargin: number;
   nextId: number;
   createdAt: string;
+  shareId?: string;
 };
 
 export type CalcRow = Item & {

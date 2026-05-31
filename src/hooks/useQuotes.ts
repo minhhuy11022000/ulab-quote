@@ -58,6 +58,9 @@ export function useQuotes() {
   const setGlobalMargin = useCallback((m: number) =>
     updateActiveQuote(q => ({ ...q, globalMargin: m })), [updateActiveQuote]);
 
+  const setShareId = useCallback((id: string) =>
+    updateActiveQuote(q => ({ ...q, shareId: id })), [updateActiveQuote]);
+
   const updateItem = useCallback((itemId: number, field: keyof Item, val: Item[keyof Item]) => {
     updateActiveQuote(q => ({ ...q, items: q.items.map(it => it.id === itemId ? { ...it, [field]: val } : it) }));
   }, [updateActiveQuote]);
@@ -192,7 +195,7 @@ export function useQuotes() {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
     activeQuote, calculated, totals, bulkData, gm,
-    setClientName, setGlobalMargin,
+    setClientName, setGlobalMargin, setShareId,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,

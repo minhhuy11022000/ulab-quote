@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { useQuotes } from "./hooks/useQuotes";
 import { fmt, pct } from "./lib/utils";
 import { Sidebar, SIDEBAR_PCT } from "./components/Sidebar";
+import { supabase } from "./supabase";
 import { StatCard } from "./components/StatCard";
 import { OverviewView } from "./components/OverviewView";
 import { PrintView } from "./components/PrintView";
@@ -24,12 +25,33 @@ export default function App() {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
     activeQuote, calculated, totals, bulkData, gm,
-    setClientName, setGlobalMargin,
+    setClientName, setGlobalMargin, setShareId,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
     handleExport,
   } = useQuotes();
+
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = async () => {
+    setShareLoading(true);
+    let shareId = activeQuote.shareId;
+    if (shareId) {
+      const { error } = await supabase.from("shared_quotes").update({ quote_data: activeQuote }).eq("id", shareId);
+      if (error) { setShareLoading(false); alert("Lỗi cập nhật link. Vui lòng thử lại."); return; }
+    } else {
+      const { data, error } = await supabase.from("shared_quotes").insert({ quote_data: activeQuote }).select("id").single();
+      if (error || !data) { setShareLoading(false); alert("Lỗi tạo link. Vui lòng thử lại."); return; }
+      shareId = data.id;
+      setShareId(shareId!);
+    }
+    setShareLoading(false);
+    await navigator.clipboard.writeText(`${window.location.origin}?share=${shareId}`);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2500);
+  };
 
   if (!activeQuote) return null;
 
@@ -62,6 +84,9 @@ export default function App() {
               </button>
               <button onClick={() => handleExport("download")} title="Tải file HTML (mở trong browser để in ra PDF)" style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", color: "#475569", border: "1px solid #e2e8f0", borderRadius: 10, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 💾 Tải HTML
+              </button>
+              <button onClick={handleShare} disabled={shareLoading} style={{ display: "flex", alignItems: "center", gap: 6, background: shareCopied ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "#fff", color: shareCopied ? "#fff" : "#475569", border: "1px solid #e2e8f0", borderRadius: 10, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", opacity: shareLoading ? 0.7 : 1, transition: "all .2s" }}>
+                {shareLoading ? "⏳ Saving..." : shareCopied ? "✅ Link copied!" : "💾 Save"}
               </button>
             </div>
           )}
