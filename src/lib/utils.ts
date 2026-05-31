@@ -1,4 +1,11 @@
 export const fmt = (n: number) => Math.round(n).toLocaleString("vi-VN") + " đ";
+export const fmtM = (n: number) => {
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n / 1e9).toFixed(1) + " tỷ";
+  if (abs >= 1e6) return (n / 1e6).toFixed(1) + " tr";
+  if (abs >= 1e3) return (n / 1e3).toFixed(0) + "k";
+  return Math.round(n).toLocaleString("vi-VN");
+};
 export const fmtShort = (n: number) => Math.round(n).toLocaleString("vi-VN");
 export const pct = (n: number) => (n * 100).toFixed(1) + "%";
 export const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
