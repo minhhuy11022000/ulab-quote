@@ -28,7 +28,7 @@ export default function App() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    handleExport, handleSaveToCloud, hasUnsavedChanges, loaded,
+    handleExport, saveStatus, loaded,
   } = useQuotes();
 
   if (!loaded) return (
@@ -63,16 +63,11 @@ export default function App() {
           </div>
           {view === "detail" && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: hasUnsavedChanges ? "#f59e0b" : "#10b981" }}>
-                {hasUnsavedChanges ? "⚠️ Chưa lưu cloud" : "✅ Đã lưu"}
-              </span>
-              <button
-                onClick={handleSaveToCloud}
-                disabled={!hasUnsavedChanges}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: hasUnsavedChanges ? "#3b82f6" : "#e2e8f0", color: hasUnsavedChanges ? "#fff" : "#94a3b8", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: hasUnsavedChanges ? "pointer" : "not-allowed", boxShadow: hasUnsavedChanges ? "0 2px 8px rgba(59,130,246,0.3)" : "none" }}
-              >
-                ☁️ Lưu cloud
-              </button>
+              {saveStatus !== "idle" && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: saveStatus === "saving" ? "#94a3b8" : "#10b981" }}>
+                  {saveStatus === "saving" ? "Đang lưu..." : "✅ Đã lưu"}
+                </span>
+              )}
               <button onClick={() => handleExport("print")} style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(16,185,129,0.3)" }}>
                 📄 In / PDF
               </button>
