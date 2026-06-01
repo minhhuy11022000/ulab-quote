@@ -54,7 +54,7 @@ export default function SharePage({ quoteId }: { quoteId: string }) {
       .select('quote_data')
       .eq('id', quoteId)
       .single()
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: { quote_data: Quote } | null; error: unknown }) => {
         if (error || !data) setNotFound(true)
         else setQuote(data.quote_data as Quote)
         setLoading(false)

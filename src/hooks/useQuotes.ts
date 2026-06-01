@@ -61,6 +61,7 @@ export function useQuotes() {
   const setShareId = useCallback((id: string) =>
     updateActiveQuote(q => ({ ...q, shareId: id })), [updateActiveQuote]);
 
+  const updateItem = useCallback((itemId: number, field: keyof Item, val: Item[keyof Item]) => {
     updateActiveQuote(q => ({ ...q, items: q.items.map(it => it.id === itemId ? { ...it, [field]: val } : it) }));
   }, [updateActiveQuote]);
 
