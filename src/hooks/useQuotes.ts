@@ -62,7 +62,7 @@ export function useQuotes() {
     const t = setTimeout(async () => {
       const { error } = await supabase
         .from("quotes")
-        .upsert(quotes.map(q => ({ id: q.id, data: q })), { onConflict: "id" });
+        .upsert(quotes.map(q => ({ id: q.id, data: q, client_name: q.clientName })), { onConflict: "id" });
       if (error) {
         console.error("Auto-save failed:", error);
         setSaveStatus("idle");
