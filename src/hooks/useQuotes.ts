@@ -1,45 +1,90 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { genId, BULK_TIERS } from "../lib/utils";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
+import { supabase } from "../supabase";
 
 export function useQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>(INITIAL_QUOTES);
   const [activeId, setActiveId] = useState(INITIAL_QUOTES[0].id);
   const [view, setView] = useState("detail");
   const [loaded, setLoaded] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
   const [subTab, setSubTab] = useState("quote");
   const [bulkItem, setBulkItem] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const [showPrint, setShowPrint] = useState(false);
+  const isInitialLoad = useRef(true);
 
+  // Load: localStorage first → Supabase fallback → INITIAL_QUOTES
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("ulab:quotes");
-      if (raw) {
-        const parsed: Quote[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) {
-          setQuotes(parsed);
-          const a = localStorage.getItem("ulab:active");
-          if (a && parsed.find(q => q.id === a)) setActiveId(a);
-          else setActiveId(parsed[0].id);
+    const load = async () => {
+      try {
+        const localRaw = localStorage.getItem("ulab:quotes");
+        if (localRaw) {
+          const parsed: Quote[] = JSON.parse(localRaw);
+          if (Array.isArray(parsed) && parsed.length) {
+            setQuotes(parsed);
+            const savedActive = localStorage.getItem("ulab:activeId");
+            if (savedActive && parsed.find(q => q.id === savedActive)) {
+              setActiveId(savedActive);
+            } else {
+              setActiveId(parsed[0].id);
+            }
+            const synced = localStorage.getItem("ulab:cloudSynced") === "true";
+          setHasUnsavedChanges(!synced);
+          setLoaded(true);
+            return;
+          }
         }
+
+        // No localStorage — fetch from Supabase
+        const { data, error } = await supabase
+          .from("quotes")
+          .select("data")
+          .order("id", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const parsed: Quote[] = data.map((row: { data: Quote }) => row.data);
+          setQuotes(parsed);
+          setActiveId(parsed[0].id);
+          setHasUnsavedChanges(false); // just loaded from cloud — nothing pending
+        }
+      } catch (err) {
+        console.error("Load failed:", err);
+      } finally {
+        setLoaded(true);
       }
-    } catch {}
-    setLoaded(true);
+    };
+    load();
   }, []);
 
+  // Auto-save to localStorage on every change + mark unsaved
   useEffect(() => {
     if (!loaded) return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem("ulab:quotes", JSON.stringify(quotes));
-        localStorage.setItem("ulab:active", activeId || "");
-      } catch {}
-    }, 400);
-    return () => clearTimeout(t);
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+    setHasUnsavedChanges(true);
+    try {
+      localStorage.setItem("ulab:quotes", JSON.stringify(quotes));
+      localStorage.setItem("ulab:activeId", activeId || "");
+      localStorage.setItem("ulab:cloudSynced", "false");
+    } catch (err) {
+      console.error("localStorage save failed:", err);
+    }
   }, [quotes, activeId, loaded]);
+
+  // Warn before closing if there are unsaved cloud changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => { setBulkItem(0); setExpandedRows({}); }, [activeId]);
 
@@ -108,6 +153,10 @@ export function useQuotes() {
       if (id === activeId && next.length) setActiveId(next[0].id);
       return next;
     });
+    (async () => {
+      const { error } = await supabase.from("quotes").delete().eq("id", id);
+      if (error) console.error("Failed to delete from Supabase:", error);
+    })();
   }, [quotes, activeId]);
 
   const duplicateQuote = useCallback((id: string) => {
@@ -123,6 +172,24 @@ export function useQuotes() {
   }, [quotes]);
 
   const switchQuote = useCallback((id: string) => { setActiveId(id); setView("detail"); }, []);
+
+  // Manual cloud save — upserts all quotes to Supabase
+  const handleSaveToCloud = useCallback(async () => {
+    try {
+      const { error } = await supabase
+        .from("quotes")
+        .upsert(
+          quotes.map(q => ({ id: q.id, data: q })),
+          { onConflict: "id" }
+        );
+      if (error) throw error;
+      localStorage.setItem("ulab:cloudSynced", "true");
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      console.error("Save to cloud failed:", err);
+      alert(`❌ Save failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [quotes]);
 
   const gm = activeQuote ? activeQuote.globalMargin / 100 : 0.35;
 
@@ -199,6 +266,6 @@ export function useQuotes() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    handleExport,
+    handleExport, handleSaveToCloud, hasUnsavedChanges, loaded,
   };
 }

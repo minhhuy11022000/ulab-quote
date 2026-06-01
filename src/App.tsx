@@ -2,7 +2,6 @@ import { useState, type CSSProperties } from "react";
 import { useQuotes } from "./hooks/useQuotes";
 import { fmt, pct } from "./lib/utils";
 import { Sidebar, SIDEBAR_PCT } from "./components/Sidebar";
-import { supabase } from "./supabase";
 import { StatCard } from "./components/StatCard";
 import { OverviewView } from "./components/OverviewView";
 import { PrintView } from "./components/PrintView";
@@ -25,33 +24,18 @@ export default function App() {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
     activeQuote, calculated, totals, bulkData, gm,
-    setClientName, setGlobalMargin, setShareId,
+    setClientName, setGlobalMargin,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    handleExport,
+    handleExport, handleSaveToCloud, hasUnsavedChanges, loaded,
   } = useQuotes();
 
-  const [shareLoading, setShareLoading] = useState(false);
-  const [shareCopied, setShareCopied] = useState(false);
-
-  const handleShare = async () => {
-    setShareLoading(true);
-    let shareId = activeQuote.shareId;
-    if (shareId) {
-      const { error } = await supabase.from("shared_quotes").update({ quote_data: activeQuote }).eq("id", shareId);
-      if (error) { setShareLoading(false); alert("Lỗi cập nhật link. Vui lòng thử lại."); return; }
-    } else {
-      const { data, error } = await supabase.from("shared_quotes").insert({ quote_data: activeQuote }).select("id").single();
-      if (error || !data) { setShareLoading(false); alert("Lỗi tạo link. Vui lòng thử lại."); return; }
-      shareId = data.id;
-      setShareId(shareId!);
-    }
-    setShareLoading(false);
-    await navigator.clipboard.writeText(`${window.location.origin}?share=${shareId}`);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2500);
-  };
+  if (!loaded) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "'Inter',system-ui,sans-serif", color: "#64748b", fontSize: 14 }}>
+      Đang tải dữ liệu...
+    </div>
+  );
 
   if (!activeQuote) return null;
 
@@ -78,7 +62,17 @@ export default function App() {
             </p>
           </div>
           {view === "detail" && (
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: hasUnsavedChanges ? "#f59e0b" : "#10b981" }}>
+                {hasUnsavedChanges ? "⚠️ Chưa lưu cloud" : "✅ Đã lưu"}
+              </span>
+              <button
+                onClick={handleSaveToCloud}
+                disabled={!hasUnsavedChanges}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: hasUnsavedChanges ? "#3b82f6" : "#e2e8f0", color: hasUnsavedChanges ? "#fff" : "#94a3b8", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: hasUnsavedChanges ? "pointer" : "not-allowed", boxShadow: hasUnsavedChanges ? "0 2px 8px rgba(59,130,246,0.3)" : "none" }}
+              >
+                ☁️ Lưu cloud
+              </button>
               <button onClick={() => handleExport("print")} style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(16,185,129,0.3)" }}>
                 📄 In / PDF
               </button>

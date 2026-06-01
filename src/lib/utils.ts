@@ -8,7 +8,7 @@ export const fmtM = (n: number) => {
 };
 export const fmtShort = (n: number) => Math.round(n).toLocaleString("vi-VN");
 export const pct = (n: number) => (n * 100).toFixed(1) + "%";
-export const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+export const genId = () => crypto.randomUUID();
 
 export const BULK_TIERS = [
   { label: "-50%", factor: 0.5, costDelta: 0.10 },

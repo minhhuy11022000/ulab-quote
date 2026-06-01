@@ -1,5 +1,6 @@
 import type { Item, Quote } from "../types";
 import { createQuote } from "./calc";
+import { genId } from "./utils";
 
 const SAMPLE_ITEMS: Item[] = [
   { id: 1, name: "Áo Khoác Team Flash", qty: 400, costs: [{ label: "Phôi", value: 42660 }, { label: "In ấn", value: 20000 }, { label: "Đóng gói", value: 10000 }], margin: 0.35, priceOverride: null },
@@ -10,7 +11,7 @@ const SAMPLE_ITEMS: Item[] = [
 ];
 
 const NTPMM_SUMMER_QUOTE: Quote = {
-  id: "ntpmm-summer",
+  id: genId(),
   clientName: "Những Thành Phố Mơ Màng Summer",
   items: [
     { id: 1, name: "Vòng tay khán giả", qty: 17000, costs: [{ label: "Phôi (0.4¥ × 3950)", value: 1580 }, { label: "Ship VN (2tr/17k)", value: 118 }], margin: 0.35, priceOverride: null },
@@ -32,6 +33,6 @@ const NTPMM_SUMMER_QUOTE: Quote = {
 };
 
 export const INITIAL_QUOTES: Quote[] = [
-  { ...createQuote("Team Flash 2026", SAMPLE_ITEMS), id: "demo-flash" },
+  createQuote("Team Flash 2026", SAMPLE_ITEMS),
   NTPMM_SUMMER_QUOTE,
 ];
