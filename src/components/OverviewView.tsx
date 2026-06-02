@@ -1,8 +1,11 @@
 import { useMemo } from "react";
 import type { Quote } from "../types";
 import { fmt, pct } from "../lib/utils";
+import { cn } from "@/lib/utils";
 import { calcQuoteTotals } from "../lib/calc";
 import { StatCard } from "./StatCard";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Props {
   quotes: Quote[];
@@ -24,62 +27,67 @@ export function OverviewView({ quotes, onSwitch }: Props) {
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
+      <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
         <StatCard label="Tổng chi phí" value={fmt(grand.totalCost)} sub={`${quotes.length} khách hàng`} color="orange" />
         <StatCard label="Tổng doanh thu" value={fmt(grand.totalRev)} color="blue" />
         <StatCard label="Tổng lợi nhuận" value={fmt(grand.profit)} color="green" />
         <StatCard label="Biên LN trung bình" value={pct(grand.margin)} sub={`${grand.items} sản phẩm`} color="purple" />
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
-          So sánh các khách hàng <span style={{ fontSize: 11, fontWeight: 500, color: "#94a3b8", marginLeft: 6 }}>(sắp xếp theo doanh thu)</span>
+      <div className="bg-card rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 text-sm font-bold text-slate-900">
+          So sánh các khách hàng{" "}
+          <span className="text-[11px] font-medium text-muted-foreground ml-1.5">(sắp xếp theo doanh thu)</span>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                {["#", "Khách hàng", "Số SP", "Tổng vốn", "Doanh thu", "Lợi nhuận", "Biên LN", ""].map((h, i) => (
-                  <th key={i} style={{ padding: "10px 12px", textAlign: i > 1 ? "right" : "left" as const, fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((q, i) => (
-                <tr key={q.id} onClick={() => onSwitch(q.id)} style={{ cursor: "pointer", borderBottom: "1px solid #f8fafc", transition: "background .15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#fafbff"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ padding: "12px", color: "#94a3b8", fontWeight: 600 }}>{i + 1}</td>
-                  <td style={{ padding: "12px", fontWeight: 600, color: "#1e293b" }}>{q.clientName || "Không tên"}</td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#64748b" }}>{q.items.length}</td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#64748b" }}>{fmt(q.totals.totalCost)}</td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{fmt(q.totals.totalRev)}</td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#059669", fontWeight: 600 }}>{fmt(q.totals.profit)}</td>
-                  <td style={{ padding: "12px", textAlign: "right" }}>
-                    <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: q.totals.margin >= q.globalMargin / 100 ? "#ecfdf5" : "#fffbeb", color: q.totals.margin >= q.globalMargin / 100 ? "#059669" : "#d97706" }}>{pct(q.totals.margin)}</span>
-                  </td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#94a3b8", fontSize: 16 }}>›</td>
-                </tr>
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {["#", "Khách hàng", "Số SP", "Tổng vốn", "Doanh thu", "Lợi nhuận", "Biên LN", ""].map((h, i) => (
+                <TableHead key={i} className={cn("text-[10px] font-semibold text-muted-foreground uppercase tracking-wide", i > 1 && "text-right")}>{h}</TableHead>
               ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
-                <td colSpan={2} style={{ padding: "14px 12px", color: "#1e293b" }}>TỔNG ({quotes.length} khách hàng)</td>
-                <td style={{ padding: "14px 12px", textAlign: "right", color: "#475569" }}>{grand.items}</td>
-                <td style={{ padding: "14px 12px", textAlign: "right", color: "#475569" }}>{fmt(grand.totalCost)}</td>
-                <td style={{ padding: "14px 12px", textAlign: "right", color: "#2563eb" }}>{fmt(grand.totalRev)}</td>
-                <td style={{ padding: "14px 12px", textAlign: "right", color: "#059669" }}>{fmt(grand.profit)}</td>
-                <td style={{ padding: "14px 12px", textAlign: "right" }}>
-                  <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#f3e8ff", color: "#7c3aed" }}>{pct(grand.margin)}</span>
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((q, i) => (
+              <TableRow key={q.id} onClick={() => onSwitch(q.id)} className="cursor-pointer">
+                <TableCell className="text-muted-foreground font-semibold">{i + 1}</TableCell>
+                <TableCell className="font-semibold text-slate-900">{q.clientName || "Không tên"}</TableCell>
+                <TableCell className="text-right text-slate-500">{q.items.length}</TableCell>
+                <TableCell className="text-right text-slate-500">{fmt(q.totals.totalCost)}</TableCell>
+                <TableCell className="text-right font-semibold text-blue-600">{fmt(q.totals.totalRev)}</TableCell>
+                <TableCell className="text-right font-semibold text-emerald-600">{fmt(q.totals.profit)}</TableCell>
+                <TableCell className="text-right">
+                  <Badge className={cn(
+                    "text-[11px]",
+                    q.totals.margin >= q.globalMargin / 100
+                      ? "bg-emerald-50 text-emerald-700 border-transparent"
+                      : "bg-amber-50 text-amber-700 border-transparent"
+                  )}>
+                    {pct(q.totals.margin)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right text-muted-foreground text-base">›</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={2} className="text-slate-900">TỔNG ({quotes.length} khách hàng)</TableCell>
+              <TableCell className="text-right text-slate-600">{grand.items}</TableCell>
+              <TableCell className="text-right text-slate-600">{fmt(grand.totalCost)}</TableCell>
+              <TableCell className="text-right text-blue-600">{fmt(grand.totalRev)}</TableCell>
+              <TableCell className="text-right text-emerald-600">{fmt(grand.profit)}</TableCell>
+              <TableCell className="text-right">
+                <Badge className="bg-purple-50 text-purple-700 border-transparent text-[11px]">{pct(grand.margin)}</Badge>
+              </TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
       </div>
 
-      <div style={{ marginTop: 14, padding: "12px 16px", background: "#eff6ff", borderRadius: 12, border: "1px solid #dbeafe", fontSize: 12, color: "#1e40af" }}>
+      <div className="mt-3.5 px-4 py-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-800">
         💡 Click vào dòng bất kỳ để mở chi tiết báo giá của khách hàng đó
       </div>
     </div>
