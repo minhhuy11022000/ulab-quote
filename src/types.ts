@@ -16,6 +16,7 @@ export type Quote = {
   globalMargin: number;
   nextId: number;
   createdAt: string;
+  shareId?: string;
 };
 
 export type CalcRow = Item & {
@@ -29,4 +30,9 @@ export type CalcRow = Item & {
   isOverridden: boolean;
 };
 
-export type Totals = { totalCost: number; totalRev: number; profit: number; margin: number };
+export type Totals = {
+  totalCost: number;
+  totalRev: number;
+  profit: number;
+  margin: number;
+};

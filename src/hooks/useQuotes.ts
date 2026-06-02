@@ -1,45 +1,84 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { genId, BULK_TIERS } from "../lib/utils";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
+import { supabase } from "../supabase";
 
 export function useQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>(INITIAL_QUOTES);
   const [activeId, setActiveId] = useState(INITIAL_QUOTES[0].id);
   const [view, setView] = useState("detail");
   const [loaded, setLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [subTab, setSubTab] = useState("quote");
   const [bulkItem, setBulkItem] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const [showPrint, setShowPrint] = useState(false);
+  const isInitialLoad = useRef(true);
 
+  // Load from Supabase on mount, fall back to INITIAL_QUOTES
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("ulab:quotes");
-      if (raw) {
-        const parsed: Quote[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("quotes")
+          .select("data, client_name")
+          .order("id", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const parsed: Quote[] = data.map((row: { data: Omit<Quote, "clientName">; client_name: string | null }) => ({
+            ...row.data,
+            clientName: row.client_name ?? "",
+          }));
           setQuotes(parsed);
-          const a = localStorage.getItem("ulab:active");
-          if (a && parsed.find(q => q.id === a)) setActiveId(a);
-          else setActiveId(parsed[0].id);
+          const savedActive = localStorage.getItem("ulab:activeId");
+          if (savedActive && parsed.find(q => q.id === savedActive)) {
+            setActiveId(savedActive);
+          } else {
+            setActiveId(parsed[0].id);
+          }
         }
+      } catch (err) {
+        console.error("Load failed:", err);
+      } finally {
+        setLoaded(true);
       }
-    } catch {}
-    setLoaded(true);
+    };
+    load();
   }, []);
 
+  // Persist active tab to localStorage
   useEffect(() => {
     if (!loaded) return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem("ulab:quotes", JSON.stringify(quotes));
-        localStorage.setItem("ulab:active", activeId || "");
-      } catch {}
+    localStorage.setItem("ulab:activeId", activeId);
+  }, [activeId, loaded]);
+
+  // Auto-save to Supabase on every quotes change (debounced 400ms)
+  useEffect(() => {
+    if (!loaded) return;
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      const { error } = await supabase
+        .from("quotes")
+        .upsert(quotes.map(q => {
+            const { clientName, ...rest } = q;
+            return { id: q.id, client_name: clientName, data: rest };
+          }), { onConflict: "id" });
+      if (error) {
+        console.error("Auto-save failed:", error);
+        setSaveStatus("idle");
+      } else {
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      }
     }, 400);
     return () => clearTimeout(t);
-  }, [quotes, activeId, loaded]);
+  }, [quotes, loaded]);
 
   useEffect(() => { setBulkItem(0); setExpandedRows({}); }, [activeId]);
 
@@ -57,6 +96,9 @@ export function useQuotes() {
 
   const setGlobalMargin = useCallback((m: number) =>
     updateActiveQuote(q => ({ ...q, globalMargin: m })), [updateActiveQuote]);
+
+  const setShareId = useCallback((id: string) =>
+    updateActiveQuote(q => ({ ...q, shareId: id })), [updateActiveQuote]);
 
   const updateItem = useCallback((itemId: number, field: keyof Item, val: Item[keyof Item]) => {
     updateActiveQuote(q => ({ ...q, items: q.items.map(it => it.id === itemId ? { ...it, [field]: val } : it) }));
@@ -105,6 +147,10 @@ export function useQuotes() {
       if (id === activeId && next.length) setActiveId(next[0].id);
       return next;
     });
+    (async () => {
+      const { error } = await supabase.from("quotes").delete().eq("id", id);
+      if (error) console.error("Failed to delete from Supabase:", error);
+    })();
   }, [quotes, activeId]);
 
   const duplicateQuote = useCallback((id: string) => {
@@ -192,10 +238,10 @@ export function useQuotes() {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
     activeQuote, calculated, totals, bulkData, gm,
-    setClientName, setGlobalMargin,
+    setClientName, setGlobalMargin, setShareId,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    handleExport,
+    handleExport, saveStatus, loaded,
   };
 }

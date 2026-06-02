@@ -28,8 +28,14 @@ export default function App() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    handleExport,
+    handleExport, saveStatus, loaded,
   } = useQuotes();
+
+  if (!loaded) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "'Inter',system-ui,sans-serif", color: "#64748b", fontSize: 14 }}>
+      Đang tải dữ liệu...
+    </div>
+  );
 
   if (!activeQuote) return null;
 
@@ -56,7 +62,12 @@ export default function App() {
             </p>
           </div>
           {view === "detail" && (
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {saveStatus !== "idle" && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: saveStatus === "saving" ? "#94a3b8" : "#10b981" }}>
+                  {saveStatus === "saving" ? "Đang lưu..." : "✅ Đã lưu"}
+                </span>
+              )}
               <button onClick={() => handleExport("print")} style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(16,185,129,0.3)" }}>
                 📄 In / PDF
               </button>
