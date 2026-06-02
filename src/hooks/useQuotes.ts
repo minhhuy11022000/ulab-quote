@@ -23,11 +23,14 @@ export function useQuotes() {
       try {
         const { data, error } = await supabase
           .from("quotes")
-          .select("data")
+          .select("data, client_name")
           .order("id", { ascending: true });
 
         if (!error && data && data.length > 0) {
-          const parsed: Quote[] = data.map((row: { data: Quote }) => row.data);
+          const parsed: Quote[] = data.map((row: { data: Omit<Quote, "clientName">; client_name: string | null }) => ({
+            ...row.data,
+            clientName: row.client_name ?? "",
+          }));
           setQuotes(parsed);
           const savedActive = localStorage.getItem("ulab:activeId");
           if (savedActive && parsed.find(q => q.id === savedActive)) {
@@ -62,7 +65,10 @@ export function useQuotes() {
     const t = setTimeout(async () => {
       const { error } = await supabase
         .from("quotes")
-        .upsert(quotes.map(q => ({ id: q.id, data: q, client_name: q.clientName })), { onConflict: "id" });
+        .upsert(quotes.map(q => {
+            const { clientName, ...rest } = q;
+            return { id: q.id, client_name: clientName, data: rest };
+          }), { onConflict: "id" });
       if (error) {
         console.error("Auto-save failed:", error);
         setSaveStatus("idle");
