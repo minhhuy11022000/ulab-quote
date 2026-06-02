@@ -1,5 +1,6 @@
 import type { CalcRow, Totals } from "../types";
 import { fmt, fmtShort, pct } from "../lib/utils";
+import { PRINT_AREA_ID } from "../lib/constants";
 
 interface Props {
   calculated: CalcRow[];
@@ -10,7 +11,7 @@ interface Props {
 export function PrintView({ calculated, totals, clientName }: Props) {
   const today = new Date().toLocaleDateString("vi-VN");
   return (
-    <div id="print-area" style={{ fontFamily: "'Inter',system-ui,sans-serif", padding: 40, maxWidth: 900, margin: "0 auto", color: "#1e293b" }}>
+    <div id={PRINT_AREA_ID} style={{ fontFamily: "'Inter',system-ui,sans-serif", padding: 40, maxWidth: 900, margin: "0 auto", color: "#1e293b" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, borderBottom: "3px solid #3b82f6", paddingBottom: 20 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
