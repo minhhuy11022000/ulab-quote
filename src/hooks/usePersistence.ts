@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Quote } from "../types";
 import { supabase } from "../supabase";
+import { ACTIVE_ID_KEY, QUOTES_TABLE, SAVE_DEBOUNCE_MS, SAVE_STATUS_DURATION_MS } from "../lib/constants";
 
 export function usePersistence(
   quotes: Quote[],
@@ -14,7 +15,7 @@ export function usePersistence(
     const load = async () => {
       try {
         const { data, error } = await supabase
-          .from("quotes")
+          .from(QUOTES_TABLE)
           .select("data, client_name")
           .order("id", { ascending: true });
 
@@ -23,7 +24,7 @@ export function usePersistence(
             ...row.data,
             clientName: row.client_name ?? "",
           }));
-          const savedActiveId = localStorage.getItem("ulab:activeId");
+          const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
           onLoad(parsed, savedActiveId);
         }
       } catch (err) {
@@ -56,9 +57,9 @@ export function usePersistence(
         setSaveStatus("idle");
       } else {
         setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
+        setTimeout(() => setSaveStatus("idle"), SAVE_STATUS_DURATION_MS);
       }
-    }, 400);
+    }, SAVE_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [quotes, loaded]);
 

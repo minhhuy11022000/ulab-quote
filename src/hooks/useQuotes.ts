@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { genId, BULK_TIERS } from "../lib/utils";
+import { ACTIVE_ID_KEY, QUOTES_TABLE, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
 import { supabase } from "../supabase";
@@ -26,7 +27,7 @@ export function useQuotes() {
 
   useEffect(() => {
     if (!loaded) return;
-    localStorage.setItem("ulab:activeId", activeId);
+    localStorage.setItem(ACTIVE_ID_KEY, activeId);
   }, [activeId, loaded]);
 
   useEffect(() => { setBulkItem(0); setExpandedRows({}); }, [activeId]);
@@ -70,7 +71,7 @@ export function useQuotes() {
   const addItem = useCallback(() => {
     updateActiveQuote(q => ({
       ...q,
-      items: [...q.items, { id: q.nextId, name: "", qty: 100, costs: [{ label: "Phôi", value: 0 }], margin: q.globalMargin / 100, priceOverride: null }],
+      items: [...q.items, { id: q.nextId, name: "", qty: DEFAULT_ITEM_QTY, costs: [{ label: DEFAULT_COST_LABEL, value: 0 }], margin: q.globalMargin / 100, priceOverride: null }],
       nextId: q.nextId + 1,
     }));
   }, [updateActiveQuote]);
@@ -99,7 +100,7 @@ export function useQuotes() {
       return next;
     });
     (async () => {
-      const { error } = await supabase.from("quotes").delete().eq("id", id);
+      const { error } = await supabase.from(QUOTES_TABLE).delete().eq("id", id);
       if (error) console.error("Failed to delete from Supabase:", error);
     })();
   }, [quotes, activeId]);
@@ -118,7 +119,7 @@ export function useQuotes() {
 
   const switchQuote = useCallback((id: string) => { setActiveId(id); setView("detail"); }, []);
 
-  const gm = activeQuote ? activeQuote.globalMargin / 100 : 0.35;
+  const gm = activeQuote ? activeQuote.globalMargin / 100 : DEFAULT_GLOBAL_MARGIN / 100;
 
   const calculated = useMemo<CalcRow[]>(
     () => activeQuote?.items.map(it => ({ ...it, ...calcRow(it, gm) })) ?? [],

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { fmt, pct } from "../lib/utils";
+import { MARGIN_OPTIONS } from "../lib/constants";
 import { CostBreakdown } from "./CostBreakdown";
 
 const thStyle: CSSProperties = {
@@ -38,7 +39,7 @@ export function QuoteTable({
     <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
         <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Target Margin (giá ĐX):</span>
-        {[25, 30, 35, 40, 45, 50].map(m => (
+        {MARGIN_OPTIONS.map(m => (
           <button key={m} onClick={() => setGlobalMargin(m)} style={{ padding: "4px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: activeQuote.globalMargin === m ? "none" : "1px solid #e2e8f0", background: activeQuote.globalMargin === m ? "#3b82f6" : "#fff", color: activeQuote.globalMargin === m ? "#fff" : "#64748b", cursor: "pointer" }}>{m}%</button>
         ))}
       </div>

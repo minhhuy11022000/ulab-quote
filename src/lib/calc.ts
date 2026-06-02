@@ -1,5 +1,6 @@
 import type { Item, Quote, CalcRow, Totals } from "../types";
 import { genId } from "./utils";
+import { DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "./constants";
 
 export function calcRow(item: Item, globalMargin: number): Omit<CalcRow, keyof Item> {
   const unitCost = item.costs.reduce((s, c) => s + (c.value || 0), 0);
@@ -29,8 +30,8 @@ export function calcQuoteTotals(quote: Quote): Totals {
 export const createQuote = (clientName: string, items: Item[] | null = null): Quote => ({
   id: genId(),
   clientName,
-  items: items ?? [{ id: 1, name: "", qty: 100, costs: [{ label: "Phôi", value: 0 }], margin: 0.35, priceOverride: null }],
-  globalMargin: 35,
+  items: items ?? [{ id: 1, name: "", qty: DEFAULT_ITEM_QTY, costs: [{ label: DEFAULT_COST_LABEL, value: 0 }], margin: DEFAULT_GLOBAL_MARGIN / 100, priceOverride: null }],
+  globalMargin: DEFAULT_GLOBAL_MARGIN,
   nextId: items ? Math.max(...items.map(i => i.id)) + 1 : 2,
   createdAt: new Date().toISOString(),
 });
