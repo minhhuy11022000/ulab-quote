@@ -1,23 +1,25 @@
-const GRADIENTS = {
-  blue: "linear-gradient(135deg,#3b82f6,#2563eb)",
-  green: "linear-gradient(135deg,#10b981,#059669)",
-  purple: "linear-gradient(135deg,#8b5cf6,#7c3aed)",
-  orange: "linear-gradient(135deg,#f97316,#ea580c)",
+import { cn } from "@/lib/utils";
+
+const GRADIENT_CLASSES = {
+  blue: "from-blue-500 to-blue-600",
+  green: "from-emerald-500 to-emerald-600",
+  purple: "from-violet-500 to-violet-600",
+  orange: "from-orange-500 to-orange-600",
 } as const;
 
 interface Props {
   label: string;
   value: string;
   sub?: string;
-  color?: keyof typeof GRADIENTS;
+  color?: keyof typeof GRADIENT_CLASSES;
 }
 
 export function StatCard({ label, value, sub, color = "blue" }: Props) {
   return (
-    <div style={{ background: GRADIENTS[color], borderRadius: 16, padding: "14px 16px", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-      <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.8, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{sub}</div>}
+    <div className={cn("bg-linear-to-br rounded-2xl px-4 py-3.5 text-white shadow-md", GRADIENT_CLASSES[color])}>
+      <div className="text-[11px] font-medium opacity-80 mb-0.5">{label}</div>
+      <div className="text-lg font-bold tracking-tight">{value}</div>
+      {sub && <div className="text-[11px] opacity-70 mt-0.5">{sub}</div>}
     </div>
   );
 }

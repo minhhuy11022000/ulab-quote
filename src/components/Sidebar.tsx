@@ -1,8 +1,9 @@
 import type { Quote } from '../types';
 import { calcQuoteTotals } from '../lib/calc';
 import { fmtM, pct } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
-export const SIDEBAR_PCT = '20%'; // for position:fixed (% = viewport-relative)
+export const SIDEBAR_PCT = '20%';
 
 export function Sidebar({
   quotes,
@@ -29,248 +30,112 @@ export function Sidebar({
 }) {
   return (
     <>
-      {/* Single toggle tab — slides with the sidebar edge */}
+      {/* Toggle tab — slides with sidebar edge */}
       <button
         onClick={onToggleSidebar}
+        className="fixed top-22 z-101 flex items-center justify-center w-5 h-14 rounded-r-lg bg-linear-to-br from-blue-500 to-blue-600 text-white text-[13px] font-bold shadow-[2px_2px_10px_rgba(59,130,246,0.35)] border-none cursor-pointer"
         style={{
-          position: 'fixed',
           left: sidebarOpen ? SIDEBAR_PCT : 0,
-          top: 88,
-          zIndex: 101,
           transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
-          width: 20,
-          height: 56,
-          borderRadius: '0 8px 8px 0',
-          background: 'linear-gradient(135deg,#3b82f6,#2563eb)',
-          border: 'none',
-          color: '#fff',
-          cursor: 'pointer',
-          fontSize: 13,
-          fontWeight: 700,
-          boxShadow: '2px 2px 10px rgba(59,130,246,0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
         {sidebarOpen ? '‹' : '›'}
       </button>
 
+      {/* Sidebar panel */}
       <div
+        className="fixed left-0 top-0 bottom-0 bg-slate-950 text-white z-99 flex flex-col overflow-hidden"
         style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
           width: sidebarOpen ? SIDEBAR_PCT : 0,
-          background: '#0f172a',
-          color: '#fff',
-          zIndex: 99,
-          transition: 'width 0.25s cubic-bezier(.4,0,.2,1)',
-          overflow: 'hidden',
           boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.2)' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
+          transition: 'width 0.25s cubic-bezier(.4,0,.2,1)',
         }}
       >
-        <div
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            padding: '20px 16px 12px',
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-          }}
-        >
-          <div
-            style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
-              >
-                U
-              </div>
-              <span
-                style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.5 }}
-              >
-                ULAB
-              </span>
+        <div className="w-full box-border px-4 pt-5 pb-3 flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7.5 h-7.5 rounded-lg bg-linear-to-br from-blue-500 to-violet-500 flex items-center justify-center font-extrabold text-xs">
+              U
             </div>
+            <span className="text-base font-extrabold tracking-tight">ULAB</span>
           </div>
 
+          {/* Overview button */}
           <button
             onClick={onOverview}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: 'none',
-              marginBottom: 8,
-              background:
-                view === 'overview' ? 'rgba(59,130,246,0.2)' : 'transparent',
-              color: view === 'overview' ? '#60a5fa' : '#94a3b8',
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer',
-              textAlign: 'left',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
+            className={cn(
+              'w-full px-3 py-2.5 rounded-xl border-none mb-2 font-semibold text-[13px] cursor-pointer text-left flex items-center gap-2',
+              view === 'overview'
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-transparent text-slate-400'
+            )}
           >
-            <span style={{ fontSize: 15 }}>📊</span> Tổng quan
+            <span className="text-[15px]">📊</span> Tổng quan
           </button>
 
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: 1,
-              padding: '12px 12px 6px',
-              borderTop: '1px solid #1e293b',
-            }}
-          >
+          {/* Section label */}
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 py-3 border-t border-slate-800">
             Khách hàng
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
+          {/* Quote list */}
+          <div className="flex-1 overflow-y-auto flex flex-col gap-0.5">
             {quotes.map((q) => {
               const active = q.id === activeId && view === 'detail';
               const t = calcQuoteTotals(q);
               return (
                 <div
                   key={q.id}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    background: active
-                      ? 'rgba(59,130,246,0.15)'
-                      : 'transparent',
-                    borderLeft: active
-                      ? '3px solid #3b82f6'
-                      : '3px solid transparent',
-                  }}
+                  className={cn(
+                    'px-3 py-2.5 rounded-xl cursor-pointer border-l-[3px]',
+                    active
+                      ? 'bg-blue-500/15 border-blue-500'
+                      : 'bg-transparent border-transparent'
+                  )}
                   onClick={() => onSwitch(q.id)}
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: active ? '#60a5fa' : '#e2e8f0',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
+                  <div className="flex items-center justify-between">
+                    <span className={cn(
+                      'text-[13px] font-semibold overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0',
+                      active ? 'text-blue-400' : 'text-slate-200'
+                    )}>
                       {q.clientName || 'Không tên'}
                     </span>
-                    <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    <div className="flex gap-0.5 shrink-0">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDuplicate(q.id);
-                        }}
-                        title='Nhân bản'
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#64748b',
-                          cursor: 'pointer',
-                          fontSize: 11,
-                          padding: '2px 4px',
-                        }}
+                        onClick={e => { e.stopPropagation(); onDuplicate(q.id); }}
+                        title="Nhân bản"
+                        className="bg-transparent border-none text-slate-500 cursor-pointer text-[11px] px-1 py-0.5"
                       >
                         ⎘
                       </button>
                       {quotes.length > 1 && (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(q.id);
-                          }}
-                          title='Xoá'
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#64748b',
-                            cursor: 'pointer',
-                            fontSize: 14,
-                            padding: '2px 4px',
-                            lineHeight: 1,
-                          }}
+                          onClick={e => { e.stopPropagation(); onDelete(q.id); }}
+                          title="Xoá"
+                          className="bg-transparent border-none text-slate-500 cursor-pointer text-sm px-1 py-0.5 leading-none"
                         >
                           ×
                         </button>
                       )}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      marginTop: 4,
-                      fontSize: 10,
-                      color: '#64748b',
-                    }}
-                  >
+                  <div className="flex gap-2 mt-1 text-[10px] text-slate-500">
                     <span>{q.items.length} SP</span>
                     <span>·</span>
-                    <span style={{ color: '#059669' }}>{fmtM(t.profit)}</span>
+                    <span className="text-emerald-500">{fmtM(t.profit)}</span>
                     <span>·</span>
-                    <span style={{ color: '#8b5cf6' }}>{pct(t.margin)}</span>
+                    <span className="text-violet-400">{pct(t.margin)}</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
+          {/* Add new quote */}
           <button
             onClick={onAdd}
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px dashed #334155',
-              background: 'transparent',
-              color: '#60a5fa',
-              fontWeight: 600,
-              fontSize: 12,
-              cursor: 'pointer',
-              marginTop: 8,
-            }}
+            className="w-full box-border px-3 py-2.5 rounded-xl border border-dashed border-slate-700 bg-transparent text-blue-400 font-semibold text-xs cursor-pointer mt-2"
           >
             + Khách hàng mới
           </button>
