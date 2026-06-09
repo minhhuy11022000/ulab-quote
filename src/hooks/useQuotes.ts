@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { genId, BULK_TIERS } from "../lib/utils";
-import { ACTIVE_ID_KEY, QUOTES_TABLE, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
+import { ACTIVE_ID_KEY, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
-import { supabase } from "../supabase";
 import { usePersistence } from "./usePersistence";
 import { useExport } from "./useExport";
+import { useUndoDelete } from "./useUndoDelete";
 
 export function useQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>(INITIAL_QUOTES);
@@ -38,6 +38,7 @@ export function useQuotes() {
   );
 
   const { handleExport, showPrint } = useExport(activeQuote);
+  const { deleteQuote, undoDelete, dismissDelete, pendingDelete } = useUndoDelete({ quotes, activeId, setQuotes, setActiveId });
 
   const updateActiveQuote = useCallback((updater: (q: Quote) => Quote) => {
     setQuotes(prev => prev.map(q => q.id === activeId ? updater(q) : q));
@@ -90,21 +91,6 @@ export function useQuotes() {
     setView("detail");
   }, [quotes.length]);
 
-  const deleteQuote = useCallback((id: string) => {
-    const q = quotes.find(x => x.id === id);
-    if (!q) return;
-    if (!confirm(`Xoá khách hàng "${q.clientName}"? Hành động này không thể hoàn tác.`)) return;
-    setQuotes(prev => {
-      const next = prev.filter(x => x.id !== id);
-      if (id === activeId && next.length) setActiveId(next[0].id);
-      return next;
-    });
-    (async () => {
-      const { error } = await supabase.from(QUOTES_TABLE).delete().eq("id", id);
-      if (error) console.error("Failed to delete from Supabase:", error);
-    })();
-  }, [quotes, activeId]);
-
   const duplicateQuote = useCallback((id: string) => {
     const q = quotes.find(x => x.id === id);
     if (!q) return;
@@ -150,6 +136,7 @@ export function useQuotes() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
+    pendingDelete, undoDelete, dismissDelete,
     handleExport, saveStatus, loaded,
   };
 }

@@ -12,6 +12,9 @@ export const PRINT_IFRAME_ID = "ulab-print-iframe";
 export const SAVE_DEBOUNCE_MS = 400;
 export const SAVE_STATUS_DURATION_MS = 2000;
 
+// Delete undo window
+export const DELETE_UNDO_DURATION_MS = 10_000;
+
 // Quote defaults
 export const DEFAULT_GLOBAL_MARGIN = 35;
 export const DEFAULT_ITEM_QTY = 100;
