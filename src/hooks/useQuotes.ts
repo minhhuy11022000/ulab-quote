@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
 import { genId, BULK_TIERS } from "../lib/utils";
-import { ACTIVE_ID_KEY, QUOTES_TABLE, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
+import { ACTIVE_ID_KEY, QUOTES_TABLE, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL, DELETE_UNDO_DURATION_MS } from "../lib/constants";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
 import { supabase } from "../supabase";
@@ -15,6 +15,9 @@ export function useQuotes() {
   const [subTab, setSubTab] = useState("quote");
   const [bulkItem, setBulkItem] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const [pendingDelete, setPendingDelete] = useState<{ quote: Quote; idx: number } | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingIdRef = useRef<string | null>(null);
 
   const { saveStatus, loaded } = usePersistence(quotes, (parsed, savedActiveId) => {
     setQuotes(parsed);
@@ -90,20 +93,60 @@ export function useQuotes() {
     setView("detail");
   }, [quotes.length]);
 
+  const commitDelete = (id: string) => {
+    supabase.from(QUOTES_TABLE).delete().eq("id", id)
+      .then(({ error }) => { if (error) console.error("Failed to delete from Supabase:", error); });
+  };
+
+  useEffect(() => () => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+      if (pendingIdRef.current) commitDelete(pendingIdRef.current);
+    }
+  }, []);
+
   const deleteQuote = useCallback((id: string) => {
     const q = quotes.find(x => x.id === id);
     if (!q) return;
-    if (!confirm(`Xoá khách hàng "${q.clientName}"? Hành động này không thể hoàn tác.`)) return;
+    if (!confirm(`Xoá khách hàng "${q.clientName}"?`)) return;
+    const idx = quotes.findIndex(x => x.id === id);
+
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+      if (pendingIdRef.current) commitDelete(pendingIdRef.current);
+    }
+
     setQuotes(prev => {
       const next = prev.filter(x => x.id !== id);
       if (id === activeId && next.length) setActiveId(next[0].id);
       return next;
     });
-    (async () => {
-      const { error } = await supabase.from(QUOTES_TABLE).delete().eq("id", id);
-      if (error) console.error("Failed to delete from Supabase:", error);
-    })();
+
+    pendingIdRef.current = id;
+    setPendingDelete({ quote: q, idx });
+    deleteTimerRef.current = setTimeout(() => {
+      setPendingDelete(null);
+      pendingIdRef.current = null;
+      deleteTimerRef.current = null;
+      commitDelete(id);
+    }, DELETE_UNDO_DURATION_MS);
   }, [quotes, activeId]);
+
+  const undoDelete = useCallback(() => {
+    if (!pendingDelete || !deleteTimerRef.current) return;
+    clearTimeout(deleteTimerRef.current);
+    deleteTimerRef.current = null;
+    pendingIdRef.current = null;
+    setQuotes(prev => {
+      const next = [...prev];
+      next.splice(pendingDelete.idx, 0, pendingDelete.quote);
+      return next;
+    });
+    setActiveId(pendingDelete.quote.id);
+    setPendingDelete(null);
+  }, [pendingDelete]);
+
+  const dismissDelete = useCallback(() => setPendingDelete(null), []);
 
   const duplicateQuote = useCallback((id: string) => {
     const q = quotes.find(x => x.id === id);
@@ -150,6 +193,7 @@ export function useQuotes() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
+    pendingDelete, undoDelete, dismissDelete,
     handleExport, saveStatus, loaded,
   };
 }

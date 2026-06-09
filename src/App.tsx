@@ -8,6 +8,7 @@ import { PrintView } from "./components/PrintView";
 import { QuoteTable } from "./components/QuoteTable";
 import { BulkAnalysis } from "./components/BulkAnalysis";
 import { QuoteCharts } from "./components/QuoteCharts";
+import { DeleteToast } from "./components/DeleteToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +23,7 @@ export default function App() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
+    pendingDelete, undoDelete, dismissDelete,
     handleExport, saveStatus, loaded,
   } = useQuotes();
 
@@ -133,6 +135,14 @@ export default function App() {
         <div className="fixed top-0" style={{ left: -9999 }}>
           <PrintView calculated={calculated} totals={totals} clientName={activeQuote.clientName} />
         </div>
+      )}
+
+      {pendingDelete && (
+        <DeleteToast
+          name={pendingDelete.quote.clientName}
+          onUndo={undoDelete}
+          onDismiss={dismissDelete}
+        />
       )}
     </div>
   );
