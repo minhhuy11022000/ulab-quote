@@ -28,16 +28,18 @@ The app loads real data from Supabase on startup. Without valid env vars it fall
 
 ```
 src/
-  App.tsx                   — layout + orchestration (~140 lines)
+  App.tsx                   — layout + orchestration
   SharePage.tsx             — read-only public share view (fetches from shared_quotes table)
   supabase.ts               — Supabase client (uses VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY)
   main.tsx                  — entry point; routes to SharePage if ?share= param present, else App
   index.css                 — Tailwind imports + Shadcn CSS variable theme (oklch)
+  types.ts                  — shared types: Quote, Item, CostLine, CalcRow, Totals
 
   hooks/
-    useQuotes.ts            — all quote CRUD, UI state, composes usePersistence + useExport
+    useQuotes.ts            — all quote CRUD, UI state, composes usePersistence + useExport + useUndoDelete
     usePersistence.ts       — Supabase load on mount + debounced auto-save (400ms)
     useExport.ts            — print / download HTML export
+    useUndoDelete.ts        — 10s undo delete logic; commits Supabase delete on timeout or unmount
 
   components/
     Sidebar.tsx             — dark sidebar with quote list + toggle tab
@@ -60,7 +62,20 @@ src/
 
 ## Core Data Types
 
+All types live in `src/types.ts`.
+
 ```ts
+type CostLine = { label: string; value: number };
+
+type Item = {
+  id: number;
+  name: string;
+  qty: number;
+  costs: CostLine[];       // array of labeled cost components
+  margin: number;          // decimal, e.g. 0.35 (NOT percentage)
+  priceOverride: number | null;
+}
+
 type Quote = {
   id: string;          // genId() — crypto.randomUUID()
   clientName: string;
@@ -71,14 +86,14 @@ type Quote = {
   shareId?: string;      // UUID of the shared_quotes row, if ever saved
 }
 
-type Item = {
-  id: number;
-  name: string;
-  qty: number;
-  costs: CostLine[];       // array of labeled cost components
-  margin: number;          // decimal, e.g. 0.35 (NOT percentage)
-  priceOverride: number | null;
+type CalcRow = Item & {  // returned by calcRow()
+  unitCost: number; totalCost: number;
+  suggestedPrice: number; finalPrice: number;
+  totalRev: number; profit: number;
+  actualMargin: number; isOverridden: boolean;
 }
+
+type Totals = { totalCost: number; totalRev: number; profit: number; margin: number; }
 ```
 
 **Important distinction**: `globalMargin` is stored as an integer (35), but each item's `margin` is stored as a decimal (0.35). When applying global margin to items: `margin = globalMargin / 100`.

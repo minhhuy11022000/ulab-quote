@@ -3,6 +3,7 @@ export const ACTIVE_ID_KEY = "ulab:activeId";
 
 // Supabase tables
 export const QUOTES_TABLE = "quotes";
+export const ARCHIVED_QUOTES_TABLE = "archived_quotes";
 
 // Print / export
 export const PRINT_AREA_ID = "print-area";

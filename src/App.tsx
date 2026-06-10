@@ -4,11 +4,12 @@ import { fmt, pct } from "./lib/utils";
 import { Sidebar, SIDEBAR_PCT } from "./components/Sidebar";
 import { StatCard } from "./components/StatCard";
 import { OverviewView } from "./components/OverviewView";
+import { ArchiveView } from "./components/ArchiveView";
 import { PrintView } from "./components/PrintView";
 import { QuoteTable } from "./components/QuoteTable";
 import { BulkAnalysis } from "./components/BulkAnalysis";
 import { QuoteCharts } from "./components/QuoteCharts";
-import { DeleteToast } from "./components/DeleteToast";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,8 +24,8 @@ export default function App() {
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
     addQuote, deleteQuote, duplicateQuote, switchQuote,
-    pendingDelete, undoDelete, dismissDelete,
     handleExport, saveStatus, loaded,
+    archivedQuotes, restoreQuote,
   } = useQuotes();
 
   if (!loaded) return (
@@ -51,33 +52,48 @@ export default function App() {
         <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
           <div>
             <h1 className="text-xl font-extrabold text-slate-900 m-0">
-              {view === "overview" ? "📊 Tổng quan" : activeQuote.clientName || "Báo giá"}
+              {view === "overview" ? "📊 Tổng quan" : view === "archive" ? "📦 Lưu trữ" : activeQuote.clientName || "Báo giá"}
             </h1>
             <p className="text-xs text-muted-foreground m-0">
               {view === "overview"
                 ? "So sánh tất cả khách hàng"
+                : view === "archive"
+                ? `${archivedQuotes.length} báo giá đã xoá`
                 : `${activeQuote.items.length} sản phẩm · Tạo: ${new Date(activeQuote.createdAt).toLocaleDateString("vi-VN")}`}
             </p>
           </div>
-          {view === "detail" && (
-            <div className="flex items-center gap-2">
-              {saveStatus !== "idle" && (
-                <span className={`text-xs font-semibold ${saveStatus === "saving" ? "text-muted-foreground" : "text-emerald-500"}`}>
-                  {saveStatus === "saving" ? "Đang lưu..." : "✅ Đã lưu"}
-                </span>
-              )}
-              <Button onClick={() => handleExport("print")} className="bg-linear-to-br from-emerald-500 to-emerald-600 text-white border-none shadow-[0_2px_8px_rgba(16,185,129,0.3)]">
-                📄 In / PDF
-              </Button>
-              <Button variant="outline" onClick={() => handleExport("download")} title="Tải file HTML (mở trong browser để in ra PDF)">
-                💾 Tải HTML
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {view === "archive" ? (
+              <Button variant="outline" onClick={() => setView("detail")}>← Quay lại</Button>
+            ) : (
+              <>
+                {view === "detail" && saveStatus !== "idle" && (
+                  <span className={`text-xs font-semibold ${saveStatus === "saving" ? "text-muted-foreground" : "text-emerald-500"}`}>
+                    {saveStatus === "saving" ? "Đang lưu..." : "✅ Đã lưu"}
+                  </span>
+                )}
+                {view === "detail" && (
+                  <>
+                    <Button onClick={() => handleExport("print")} className="bg-linear-to-br from-emerald-500 to-emerald-600 text-white border-none shadow-[0_2px_8px_rgba(16,185,129,0.3)]">
+                      📄 In / PDF
+                    </Button>
+                    <Button variant="outline" onClick={() => handleExport("download")} title="Tải file HTML (mở trong browser để in ra PDF)">
+                      💾 Tải HTML
+                    </Button>
+                  </>
+                )}
+                <Button variant="outline" onClick={() => setView("archive")} title={`${archivedQuotes.length} báo giá đã xoá`}>
+                  📦 Lưu trữ ({archivedQuotes.length})
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {view === "overview" ? (
           <OverviewView quotes={quotes} onSwitch={switchQuote} />
+        ) : view === "archive" ? (
+          <ArchiveView quotes={archivedQuotes} onRestore={restoreQuote} />
         ) : (
           <>
             {/* Client name */}
@@ -137,13 +153,7 @@ export default function App() {
         </div>
       )}
 
-      {pendingDelete && (
-        <DeleteToast
-          name={pendingDelete.quote.clientName}
-          onUndo={undoDelete}
-          onDismiss={dismissDelete}
-        />
-      )}
+
     </div>
   );
 }

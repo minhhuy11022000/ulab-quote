@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git diff HEAD -- src/ --name-only 2>/dev/null | grep -qE '\\.(ts|tsx)$' && claude -p \"src/ files have changed since the last commit. Run 'git diff HEAD -- src/' to see what changed, then update CLAUDE.md if the file structure, types, or key behaviors changed. Be minimal — only touch sections that actually need updating.\" --allowedTools Edit,Read,Bash 2>/dev/null || true",
+            "timeout": 120,
+            "statusMessage": "Syncing CLAUDE.md..."
+          }
+        ]
+      }
+    ]
+  }
+}
