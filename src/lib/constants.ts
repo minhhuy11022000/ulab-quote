@@ -2,8 +2,11 @@
 export const ACTIVE_ID_KEY = "ulab:activeId";
 
 // Supabase tables
-export const QUOTES_TABLE = "quotes";
-export const ARCHIVED_QUOTES_TABLE = "archived_quotes";
+export const TABLES = {
+  QUOTES: "quotes",
+  ARCHIVED_QUOTES: "archived_quotes",
+  SHARED_QUOTES: "shared_quotes",
+} as const;
 
 // Print / export
 export const PRINT_AREA_ID = "print-area";

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Quote } from "../types";
 import { supabase } from "../supabase";
-import { QUOTES_TABLE, ARCHIVED_QUOTES_TABLE } from "../lib/constants";
+import { TABLES } from "../lib/constants";
 
 interface Params {
   quotes: Quote[];
@@ -16,7 +16,7 @@ export function useArchive({ quotes, activeId, setQuotes, setActiveId }: Params)
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase
-        .from(ARCHIVED_QUOTES_TABLE)
+        .from(TABLES.ARCHIVED_QUOTES)
         .select("id, client_name, data")
         .order("archived_at", { ascending: false });
       if (error) {
@@ -44,7 +44,7 @@ export function useArchive({ quotes, activeId, setQuotes, setActiveId }: Params)
 
     // 1. DB first — only update state if this succeeds
     const { error: insertError } = await supabase
-      .from(ARCHIVED_QUOTES_TABLE)
+      .from(TABLES.ARCHIVED_QUOTES)
       .insert({
         id,
         client_name: clientName,
@@ -59,7 +59,7 @@ export function useArchive({ quotes, activeId, setQuotes, setActiveId }: Params)
     }
 
     const { error: deleteError } = await supabase
-      .from(QUOTES_TABLE)
+      .from(TABLES.QUOTES)
       .delete()
       .eq("id", id);
     if (deleteError) {
@@ -82,7 +82,7 @@ export function useArchive({ quotes, activeId, setQuotes, setActiveId }: Params)
 
     // 1. DB first — only update state if this succeeds
     const { error: insertError } = await supabase
-      .from(QUOTES_TABLE)
+      .from(TABLES.QUOTES)
       .insert({ id, client_name: clientName, data: rest });
     if (insertError) {
       console.error("Failed to restore quote to quotes:", insertError);
@@ -90,7 +90,7 @@ export function useArchive({ quotes, activeId, setQuotes, setActiveId }: Params)
     }
 
     const { error: deleteError } = await supabase
-      .from(ARCHIVED_QUOTES_TABLE)
+      .from(TABLES.ARCHIVED_QUOTES)
       .delete()
       .eq("id", id);
     if (deleteError) {
