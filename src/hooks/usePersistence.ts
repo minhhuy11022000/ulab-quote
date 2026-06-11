@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Quote } from "../types";
 import { supabase } from "../supabase";
-import { ACTIVE_ID_KEY, QUOTES_TABLE, SAVE_DEBOUNCE_MS, SAVE_STATUS_DURATION_MS } from "../lib/constants";
+import { ACTIVE_ID_KEY, TABLES, SAVE_DEBOUNCE_MS, SAVE_STATUS_DURATION_MS } from "../lib/constants";
 
 export function usePersistence(
   quotes: Quote[],
@@ -15,7 +15,7 @@ export function usePersistence(
     const load = async () => {
       try {
         const { data, error } = await supabase
-          .from(QUOTES_TABLE)
+          .from(TABLES.QUOTES)
           .select("data, client_name")
           .order("id", { ascending: true });
 
@@ -47,7 +47,7 @@ export function usePersistence(
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       const { error } = await supabase
-        .from("quotes")
+        .from(TABLES.QUOTES)
         .upsert(quotes.map(q => {
           const { clientName, ...rest } = q;
           return { id: q.id, client_name: clientName, data: rest };

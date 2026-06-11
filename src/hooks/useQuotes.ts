@@ -6,12 +6,12 @@ import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
 import { INITIAL_QUOTES } from "../lib/mockData";
 import { usePersistence } from "./usePersistence";
 import { useExport } from "./useExport";
-import { useUndoDelete } from "./useUndoDelete";
+import { useArchive } from "./useArchive";
 
 export function useQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>(INITIAL_QUOTES);
   const [activeId, setActiveId] = useState(INITIAL_QUOTES[0].id);
-  const [view, setView] = useState("detail");
+  const [view, setView] = useState<"detail" | "overview" | "archive">("detail");
   const [subTab, setSubTab] = useState("quote");
   const [bulkItem, setBulkItem] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
@@ -38,7 +38,7 @@ export function useQuotes() {
   );
 
   const { handleExport, showPrint } = useExport(activeQuote);
-  const { deleteQuote, undoDelete, dismissDelete, pendingDelete } = useUndoDelete({ quotes, activeId, setQuotes, setActiveId });
+  const { archiveQuote, restoreQuote, archivedQuotes } = useArchive({ quotes, activeId, setQuotes, setActiveId });
 
   const updateActiveQuote = useCallback((updater: (q: Quote) => Quote) => {
     setQuotes(prev => prev.map(q => q.id === activeId ? updater(q) : q));
@@ -135,8 +135,8 @@ export function useQuotes() {
     setClientName, setGlobalMargin, setShareId,
     updateItem, updateCosts, addCostLine, removeCostLine,
     addItem, removeItem, toggleExpand,
-    addQuote, deleteQuote, duplicateQuote, switchQuote,
-    pendingDelete, undoDelete, dismissDelete,
+    addQuote, deleteQuote: archiveQuote, duplicateQuote, switchQuote,
+    restoreQuote, archivedQuotes,
     handleExport, saveStatus, loaded,
   };
 }

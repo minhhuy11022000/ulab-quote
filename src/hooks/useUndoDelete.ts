@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Quote } from "../types";
 import { supabase } from "../supabase";
-import { QUOTES_TABLE, DELETE_UNDO_DURATION_MS } from "../lib/constants";
+import { TABLES, DELETE_UNDO_DURATION_MS } from "../lib/constants";
 
 interface Params {
   quotes: Quote[];
@@ -16,7 +16,7 @@ export function useUndoDelete({ quotes, activeId, setQuotes, setActiveId }: Para
   const pendingIdRef = useRef<string | null>(null);
 
   const commitDelete = (id: string) => {
-    supabase.from(QUOTES_TABLE).delete().eq("id", id)
+    supabase.from(TABLES.QUOTES).delete().eq("id", id)
       .then(({ error }) => { if (error) console.error("Failed to delete from Supabase:", error); });
   };
 
