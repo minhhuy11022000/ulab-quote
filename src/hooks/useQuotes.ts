@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
+import type { GeminiEstimate } from "../lib/gemini";
 import { genId, BULK_TIERS } from "../lib/utils";
 import { ACTIVE_ID_KEY, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
@@ -103,6 +104,21 @@ export function useQuotes() {
     setView("detail");
   }, [quotes]);
 
+  const importEstimatedQuote = useCallback((estimate: GeminiEstimate) => {
+    const items: Item[] = estimate.items.map((ei, idx) => ({
+      id: idx + 1,
+      name: ei.name,
+      qty: ei.qty,
+      costs: ei.costs,
+      margin: DEFAULT_GLOBAL_MARGIN / 100,
+      priceOverride: null,
+    }));
+    const newQ = createQuote(estimate.clientName, items);
+    setQuotes(prev => [...prev, newQ]);
+    setActiveId(newQ.id);
+    setView("detail");
+  }, []);
+
   const switchQuote = useCallback((id: string) => { setActiveId(id); setView("detail"); }, []);
 
   const gm = activeQuote ? activeQuote.globalMargin / 100 : DEFAULT_GLOBAL_MARGIN / 100;
@@ -138,5 +154,6 @@ export function useQuotes() {
     addQuote, deleteQuote: archiveQuote, duplicateQuote, switchQuote,
     restoreQuote, archivedQuotes,
     handleExport, saveStatus, loaded,
+    importEstimatedQuote,
   };
 }

@@ -9,6 +9,7 @@ import { PrintView } from "./components/PrintView";
 import { QuoteTable } from "./components/QuoteTable";
 import { BulkAnalysis } from "./components/BulkAnalysis";
 import { QuoteCharts } from "./components/QuoteCharts";
+import { EstimateModal } from "./components/EstimateModal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [estimateOpen, setEstimateOpen] = useState(false);
   const {
     quotes, activeId, view, setView, subTab, setSubTab,
     bulkItem, setBulkItem, expandedRows, showPrint,
@@ -26,6 +28,7 @@ export default function App() {
     addQuote, deleteQuote, duplicateQuote, switchQuote,
     handleExport, saveStatus, loaded,
     archivedQuotes, restoreQuote,
+    importEstimatedQuote,
   } = useQuotes();
 
   if (!loaded) return (
@@ -82,6 +85,9 @@ export default function App() {
                     </Button>
                   </>
                 )}
+                <Button variant="outline" onClick={() => setEstimateOpen(true)} title="Tạo báo giá bằng AI">
+                  ✨ AI
+                </Button>
                 <Button variant="outline" onClick={() => setView("archive")} title={`${archivedQuotes.length} báo giá đã xoá`}>
                   📦 Lưu trữ ({archivedQuotes.length})
                 </Button>
@@ -152,6 +158,12 @@ export default function App() {
           <PrintView calculated={calculated} totals={totals} clientName={activeQuote.clientName} />
         </div>
       )}
+
+      <EstimateModal
+        open={estimateOpen}
+        onClose={() => setEstimateOpen(false)}
+        onImport={importEstimatedQuote}
+      />
 
 
     </div>
