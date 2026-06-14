@@ -4,12 +4,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { estimateCosts, type GeminiEstimate } from "@/lib/gemini";
+import { estimateCosts, type AIEstimate } from "@/lib/ai";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onImport: (estimate: GeminiEstimate) => void;
+  onImport: (estimate: AIEstimate) => void;
 }
 
 export function EstimateModal({ open, onClose, onImport }: Props) {

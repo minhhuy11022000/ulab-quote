@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Quote, Item, CostLine, CalcRow, Totals } from "../types";
-import type { GeminiEstimate } from "../lib/gemini";
+import type { AIEstimate } from "../lib/ai";
 import { genId, BULK_TIERS } from "../lib/utils";
 import { ACTIVE_ID_KEY, DEFAULT_GLOBAL_MARGIN, DEFAULT_ITEM_QTY, DEFAULT_COST_LABEL } from "../lib/constants";
 import { calcRow, calcQuoteTotals, createQuote } from "../lib/calc";
@@ -104,7 +104,7 @@ export function useQuotes() {
     setView("detail");
   }, [quotes]);
 
-  const importEstimatedQuote = useCallback((estimate: GeminiEstimate) => {
+  const importEstimatedQuote = useCallback((estimate: AIEstimate) => {
     const items: Item[] = estimate.items.map((ei, idx) => ({
       id: idx + 1,
       name: ei.name,
